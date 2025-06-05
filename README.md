@@ -1,7 +1,47 @@
 # json-object-viewer
-View JSON objects as blocks on canvas. 
+View JSON objects on your Web browser: 
 
-<img src="imgs/img.svg" width="720">
+<img src="imgs/img.png" width="720">
+
+Export as SVG:
+
+<img src="imgs/img2.svg" width="720">
+
+Export/Import as json:
+
+```json
+{
+  "A": {
+    "id": "A",
+    "name": "Joshua",
+    "children_ids": [
+      "B",
+      "C",
+      "D"
+    ],
+    "parent_id": ""
+  },
+  "B": {
+    "id": "B",
+    "name": "Alex",
+    "children_ids": [],
+    "parent": "A"
+  },
+  "C": {
+    "id": "C",
+    "name": "Anna",
+    "children_ids": [],
+    "parent_id": "A"
+  },
+  "D": {
+    "id": "D",
+    "name": "Mari",
+    "children_ids": [],
+    "parent_id": "A"
+  }
+}
+```
+You can also save/load a `graph.json` file to continue editing it later.
 
 ## Install
 ```sh

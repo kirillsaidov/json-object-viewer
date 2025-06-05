@@ -69,6 +69,11 @@
             border: none;
         }
 
+        .btn.quinary {
+            background: linear-gradient(135deg, #f6d365, #fda085); 
+            border: none;
+        }
+
         .canvas-container {
             flex: 1;
             overflow: auto;
@@ -330,7 +335,7 @@
             <button class="btn" onclick="exportToJSON()">Export JSON</button>
             <input type="file" id="jsonFileInput" accept=".json" style="display: none;" onchange="importFromJSON(event)">
             <button class="btn" onclick="document.getElementById('jsonFileInput').click()">Import JSON</button>
-            <button class="btn" onclick="downloadSVG()">Download SVG</button>
+            <button class="btn quinary" onclick="downloadSVG()">Download SVG</button>
             <button class="btn tertiary" onclick="exportCache()">Export Graph File</button>
             <input type="file" id="cacheFileInput" accept=".graph.json" style="display: none;" onchange="importCache(event)">
             <button class="btn quaternary" onclick="document.getElementById('cacheFileInput').click()">Import Graph File</button>
