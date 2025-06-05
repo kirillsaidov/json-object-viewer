@@ -1,0 +1,16 @@
+# custom
+archive/
+data/
+data_test_samples/
+bin/
+lib/
+temp/
+tmp/
+catboost_info/
+__pycache__/
+piper*
+venv/
+*.log
+.DS_Store
+.env
+.vscode
