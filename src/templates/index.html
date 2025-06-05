@@ -1,0 +1,1649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Block Constructor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .btn.primary {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            border: none;
+        }
+
+        .btn.secondary {
+            background: linear-gradient(135deg, #00d2d3, #54a0ff);
+            border: none;
+        }
+
+        .btn.tertiary {
+            background: linear-gradient(135deg, #6c5ce7, #341f97);
+            border: none;
+        }
+
+        .btn.quaternary {
+            background: linear-gradient(135deg, #00f2c3, #0abde3); 
+            border: none;
+        }
+
+        .canvas-container {
+            flex: 1;
+            overflow: auto;
+            position: relative;
+        }
+
+        #canvas {
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+        }
+
+        #canvas:active {
+            cursor: grabbing;
+        }
+
+        .block {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 1rem;
+            min-width: 200px;
+            max-width: none; /* Remove max-width constraint */
+            width: 320px; /* Default width */
+            height: 480px; /* Fixed height */
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            cursor: move;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .block:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .block.selected {
+            border: 2px solid #ff6b6b;
+            box-shadow: 0 0 20px rgba(255, 107, 107, 0.3);
+        }
+
+        .block-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .block-id {
+            font-weight: bold;
+            color: #333;
+            font-size: 1.1rem;
+        }
+
+        .block-content {
+            flex: 1;
+            overflow-y: auto;
+            margin-top: 0.5rem;
+        }
+
+        .block-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .block-content::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 3px;
+        }
+
+        .block-content::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 3px;
+        }
+
+        .block-content::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .delete-btn {
+            background: #ff4757;
+            color: white;
+            border: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .field {
+            margin-bottom: 0.5rem;
+            padding: 0.3rem;
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .field-key {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .field-value {
+            color: #34495e;
+            word-break: break-word;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .form-group input, .form-group textarea, .form-group select {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        .form-group textarea {
+            height: 100px;
+            resize: vertical;
+        }
+
+        .field-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 0.5rem;
+        }
+
+        .field-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.3rem;
+            background: #f8f9fa;
+            margin-bottom: 0.3rem;
+            border-radius: 4px;
+        }
+
+        .field-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .remove-field {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 0.2rem 0.5rem;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        #json-output {
+            background: #2d3748;
+            color: #e2e8f0;
+            border: none;
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            width: 100%;
+            height: 300px;
+            resize: vertical;
+        }
+
+        .arrow {
+            position: absolute;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .arrow-line {
+            stroke: #ff6b6b;
+            stroke-width: 2;
+            fill: none;
+            marker-end: url(#arrowhead);
+        }
+
+        .connection-mode {
+            background: linear-gradient(135deg, #ffeaa7, #fdcb6e) !important;
+        }
+
+        .remove-connection-mode {
+            background: linear-gradient(135deg, #ff7675, #fd79a8) !important;
+        }
+
+        .arrow-line {
+            stroke: #ff6b6b;
+            stroke-width: 2;
+            fill: none;
+            marker-end: url(#arrowhead);
+            cursor: pointer;
+            transition: stroke-width 0.2s ease;
+        }
+
+        .remove-mode .arrow-line {
+            cursor: crosshair;
+            stroke-width: 8;
+        }
+
+        .remove-mode .arrow-line:hover {
+            stroke: #ff4757;
+            stroke-width: 10;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="controls">
+            <button class="btn primary" onclick="createBlock()">Create Block</button>
+            <button class="btn secondary" onclick="toggleConnectionMode()">Connect Blocks</button>
+            <button class="btn" onclick="toggleRemoveConnectionMode()">Remove Connections</button>
+            <button class="btn" onclick="clearAll()">Clear All</button>
+            <button class="btn" onclick="exportToJSON()">Export JSON</button>
+            <input type="file" id="jsonFileInput" accept=".json" style="display: none;" onchange="importFromJSON(event)">
+            <button class="btn" onclick="document.getElementById('jsonFileInput').click()">Import JSON</button>
+            <button class="btn" onclick="downloadSVG()">Download SVG</button>
+            <button class="btn tertiary" onclick="exportCache()">Export Graph File</button>
+            <input type="file" id="cacheFileInput" accept=".graph.json" style="display: none;" onchange="importCache(event)">
+            <button class="btn quaternary" onclick="document.getElementById('cacheFileInput').click()">Import Graph File</button>
+        </div>
+    </div>
+
+    <div class="canvas-container" id="canvasWrapper">
+        <div id="canvas" style="position: relative; transform: scale(1); transform-origin: top left;">
+            <svg id="arrows" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1;">
+                <defs>
+                    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                        <polygon points="0 0, 10 3.5, 0 7" fill="#ff6b6b" />
+                    </marker>
+                </defs>
+            </svg>
+        </div>
+    </div>
+
+    <!-- Block Creation Modal -->
+    <div id="blockModal" class="modal">
+        <div class="modal-content">
+            <h2>Create/Edit Block</h2>
+            <div class="form-group">
+                <label for="blockId">Block ID:</label>
+                <input type="text" id="blockId" placeholder="Enter block ID">
+            </div>
+            
+            <div class="form-group">
+                <label for="fieldKey">Field Key:</label>
+                <input type="text" id="fieldKey" placeholder="Enter field key">
+            </div>
+            <div class="form-group">
+                <label for="fieldType">Field Type:</label>
+                <select id="fieldType">
+                    <option value="string">String</option>
+                    <option value="number">Number</option>
+                    <option value="boolean">Boolean</option>
+                    <option value="array">Array (JSON)</option>
+                    <option value="object">Object (JSON)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="fieldValue">Field Value:</label>
+                <textarea id="fieldValue" placeholder="Enter field value"></textarea>
+            </div>
+
+            <div style="margin-top: 1rem; margin-bottom: 1rem; display: flex; gap: 1rem;">
+                <button class="btn secondary" onclick="addField()">Add Field</button>
+            </div>
+            
+            <div class="field-list" id="fieldList"></div>
+
+            <div style="margin-top: 1rem;" class="form-group">
+                <label for="blockWidth">Block Width (px):</label>
+                <input type="number" id="blockWidth" value="320" min="150" max="500">
+            </div>
+            <div class="form-group">
+                <label for="blockHeight">Block Height (px):</label>
+                <input type="number" id="blockHeight" value="480" min="100" max="400">
+            </div>
+            <div style="margin-top: 1rem; display: flex; gap: 1rem;">
+                <button class="btn primary" onclick="saveBlock()">Save Block</button>
+                <button class="btn" onclick="closeModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JSON Export Modal -->
+    <div id="jsonModal" class="modal">
+        <div class="modal-content">
+            <h2>JSON Export</h2>
+            <textarea id="json-output" readonly></textarea>
+            <div style="margin-top: 1rem; display: flex; gap: 1rem;">
+                <button class="btn primary" onclick="copyJSON()">Copy to Clipboard</button>
+                <button class="btn secondary" onclick="downloadJSON()">Download JSON</button>
+                <button class="btn" onclick="closeJSONModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Arrow Text Modal -->
+    <div id="arrowTextModal" class="modal">
+        <div class="modal-content">
+            <h2>Edit Arrow Text</h2>
+            <div class="form-group">
+                <label for="arrowText">Arrow Text:</label>
+                <input type="text" id="arrowText" placeholder="Enter text for this arrow">
+            </div>
+            <div class="form-group">
+                <label for="arrowFontSize">Font Size (px):</label>
+                <input type="number" id="arrowFontSize" value="12" min="8" max="24" step="1">
+            </div>
+            <div style="margin-top: 1rem; display: flex; gap: 1rem;">
+                <button class="btn primary" onclick="saveArrowText()">Save</button>
+                <button class="btn" onclick="closeArrowTextModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Field Modal -->
+    <div id="editFieldModal" class="modal">
+        <div class="modal-content">
+            <h2>Edit Field</h2>
+            <div class="form-group">
+                <label for="editFieldKey">Field Key:</label>
+                <input type="text" id="editFieldKey" placeholder="Enter field key">
+            </div>
+            <div class="form-group">
+                <label for="editFieldType">Field Type:</label>
+                <select id="editFieldType">
+                    <option value="string">String</option>
+                    <option value="number">Number</option>
+                    <option value="boolean">Boolean</option>
+                    <option value="array">Array (JSON)</option>
+                    <option value="object">Object (JSON)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="editFieldValue">Field Value:</label>
+                <textarea id="editFieldValue" placeholder="Enter field value"></textarea>
+            </div>
+            <div style="margin-top: 1rem; display: flex; gap: 1rem;">
+                <button class="btn primary" onclick="saveEditedField()">Save</button>
+                <button class="btn" onclick="closeEditFieldModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let blocks = {};
+        let connections = [];
+        let currentBlock = null;
+        let blockFields = [];
+        let isConnectionMode = false;
+        let isRemoveConnectionMode = false;
+        let selectedBlock = null;
+        let isDragging = false;
+        let dragOffset = { x: 0, y: 0 };
+        let isPanning = false;
+        let startPan = { x: 0, y: 0 };
+        let scrollStart = { x: 0, y: 0 };
+        let canvasZoom = 1;
+        let currentArrowIndex = -1;
+        let currentEditingFieldIndex = -1;
+        const minZoom = 0.2;
+        const maxZoom = 3;
+
+        const canvasWrapper = document.getElementById("canvasWrapper");
+
+        canvasWrapper.addEventListener("mousedown", function(e) {
+            if (e.target.id === "canvas" || e.target.id === "canvasWrapper") {
+                isPanning = true;
+                startPan = { x: e.clientX, y: e.clientY };
+                scrollStart = { x: canvasWrapper.scrollLeft, y: canvasWrapper.scrollTop };
+                canvasWrapper.style.cursor = "grabbing";
+            }
+        });
+
+        canvasWrapper.addEventListener("wheel", function (e) {
+            if (e.ctrlKey || e.metaKey) {
+                // Zoom functionality (Ctrl + wheel)
+                e.preventDefault();
+
+                // Zoom direction
+                const zoomStep = 0.1;
+                const delta = e.deltaY > 0 ? -zoomStep : zoomStep;
+
+                // Calculate new zoom level
+                const newZoom = Math.min(maxZoom, Math.max(minZoom, canvasZoom + delta));
+                if (newZoom === canvasZoom) return;
+
+                // Get mouse position relative to canvas
+                const rect = canvasWrapper.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left + canvasWrapper.scrollLeft;
+                const mouseY = e.clientY - rect.top + canvasWrapper.scrollTop;
+
+                // Apply zoom
+                canvasZoom = newZoom;
+                document.getElementById("canvas").style.transform = `scale(${canvasZoom})`;
+                document.getElementById("canvas").style.transformOrigin = "top left";
+
+                // Adjust scroll so that zoom centers on the mouse pointer
+                canvasWrapper.scrollLeft = mouseX * canvasZoom - (e.clientX - rect.left);
+                canvasWrapper.scrollTop = mouseY * canvasZoom - (e.clientY - rect.top);
+            } else {
+                // Regular scrolling (wheel without Ctrl)
+                // Let the browser handle normal scrolling behavior
+                // No preventDefault() needed here
+            }
+        }, { passive: false });
+
+        window.addEventListener("mouseup", function() {
+            isPanning = false;
+            canvasWrapper.style.cursor = "grab";
+        });
+
+        window.addEventListener("mousemove", function(e) {
+            if (!isPanning) return;
+            const dx = e.clientX - startPan.x;
+            const dy = e.clientY - startPan.y;
+            canvasWrapper.scrollLeft = scrollStart.x - dx;
+            canvasWrapper.scrollTop = scrollStart.y - dy;
+        });
+
+        // Add this function to handle loading cache data
+        function loadCacheData(cacheData) {
+            blocks = cacheData.blocks || {};
+            connections = cacheData.connections || [];
+            renderBlocks();
+            updateCanvasSize();
+            renderConnections();
+            saveToCache(); // Save to localStorage
+        }
+
+        // Add export cache function
+        function exportCache() {
+            const cacheData = {
+                blocks: blocks,
+                connections: connections,
+                timestamp: Date.now()
+            };
+            
+            const jsonString = JSON.stringify(cacheData);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `block_constructor_cache_${new Date().toISOString().slice(0, 10)}.graph.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Add import cache function
+        function importCache(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const cacheData = JSON.parse(e.target.result);
+                    loadCacheData(cacheData);
+                    alert("Cache imported successfully!");
+                } catch (err) {
+                    alert("Invalid cache file format");
+                    console.error(err);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Save blocks and connections to localStorage
+        function saveToCache() {
+            const cacheData = {
+                blocks: blocks,
+                connections: connections,
+                timestamp: Date.now()
+            };
+            localStorage.setItem('blockConstructorCache', JSON.stringify(cacheData));
+        }
+
+        // Load blocks and connections from localStorage
+        function loadFromCache() {
+            try {
+                const cached = localStorage.getItem('blockConstructorCache');
+                if (cached) {
+                    const cacheData = JSON.parse(cached);
+                    blocks = cacheData.blocks || {};
+                    connections = cacheData.connections || [];
+                    renderBlocks();
+                    updateCanvasSize();
+                    renderConnections();
+                    console.log('Loaded from cache:', Object.keys(blocks).length, 'blocks');
+                }
+            } catch (error) {
+                console.error('Error loading from cache:', error);
+            }
+        }
+
+        function updateCanvasSize() {
+            let maxRight = 4000;
+            let maxBottom = 4000;
+
+            Object.values(blocks).forEach(block => {
+                const right = block.position.x + (block.width || 320);
+                const bottom = block.position.y + (block.height || 480);
+                if (right > maxRight) maxRight = right;
+                if (bottom > maxBottom) maxBottom = bottom;
+            });
+
+            maxRight += 500;
+            maxBottom += 500;
+
+            const canvas = document.getElementById('canvas');
+            canvas.style.width = maxRight + 'px';
+            canvas.style.height = maxBottom + 'px';
+        }
+
+        function createBlock() {
+            currentBlock = null;
+            blockFields = [];
+            document.getElementById('blockId').value = '';
+            document.getElementById('blockWidth').value = '320';
+            document.getElementById('blockHeight').value = '480';
+            updateFieldList();
+            document.getElementById('blockModal').style.display = 'block';
+        }
+
+        function editBlock(blockId) {
+            currentBlock = blockId;
+            blockFields = [];
+            document.getElementById('blockId').value = blockId;
+            
+            // Load existing fields
+            const block = blocks[blockId];
+            document.getElementById('blockWidth').value = block.width || 320;
+            document.getElementById('blockHeight').value = block.height || 480;
+            
+            for (const [key, value] of Object.entries(block.data)) {
+                blockFields.push({ key, value, type: getFieldType(value) });
+            }
+            
+            updateFieldList();
+            document.getElementById('blockModal').style.display = 'block';
+        }
+
+        function getFieldType(value) {
+            if (typeof value === 'string') return 'string';
+            if (typeof value === 'number') return 'number';
+            if (typeof value === 'boolean') return 'boolean';
+            if (Array.isArray(value)) return 'array';
+            if (typeof value === 'object') return 'object';
+            return 'string';
+        }
+
+        function addField() {
+            const key = document.getElementById('fieldKey').value.trim();
+            const type = document.getElementById('fieldType').value;
+            const valueStr = document.getElementById('fieldValue').value.trim();
+            
+            if (!key) {
+                alert('Please enter a field key');
+                return;
+            }
+
+            // Allow empty values only for string type
+            if (!valueStr && type !== 'string') {
+                alert('Please enter a field value');
+                return;
+            }
+            
+            let value;
+            try {
+                switch (type) {
+                    case 'string':
+                        value = valueStr;
+                        break;
+                    case 'number':
+                        value = parseFloat(valueStr);
+                        if (isNaN(value)) throw new Error('Invalid number');
+                        break;
+                    case 'boolean':
+                        value = valueStr.toLowerCase() === 'true';
+                        break;
+                    case 'array':
+                    case 'object':
+                        value = JSON.parse(valueStr);
+                        break;
+                }
+            } catch (e) {
+                alert('Invalid value format for selected type');
+                return;
+            }
+            
+            blockFields.push({ key, value, type });
+            updateFieldList();
+            
+            // Clear inputs
+            document.getElementById('fieldKey').value = '';
+            document.getElementById('fieldValue').value = '';
+        }
+
+        function removeField(index) {
+            blockFields.splice(index, 1);
+            updateFieldList();
+        }
+
+        function editField(index) {
+            currentEditingFieldIndex = index;
+            const field = blockFields[index];
+            
+            document.getElementById('editFieldKey').value = field.key;
+            document.getElementById('editFieldType').value = field.type;
+            document.getElementById('editFieldValue').value = typeof field.value === 'string' ? field.value : JSON.stringify(field.value);
+            
+            document.getElementById('editFieldModal').style.display = 'block';
+        }
+
+        function saveEditedField() {
+            if (currentEditingFieldIndex === -1) return;
+            
+            const key = document.getElementById('editFieldKey').value.trim();
+            const type = document.getElementById('editFieldType').value;
+            const valueStr = document.getElementById('editFieldValue').value.trim();
+            
+            if (!key) {
+                alert('Please enter a field key');
+                return;
+            }
+
+            // Allow empty values only for string type
+            if (!valueStr && type !== 'string') {
+                alert('Please enter a field value');
+                return;
+            }
+            
+            let value;
+            try {
+                switch (type) {
+                    case 'string':
+                        value = valueStr;
+                        break;
+                    case 'number':
+                        value = parseFloat(valueStr);
+                        if (isNaN(value)) throw new Error('Invalid number');
+                        break;
+                    case 'boolean':
+                        value = valueStr.toLowerCase() === 'true';
+                        break;
+                    case 'array':
+                    case 'object':
+                        value = JSON.parse(valueStr);
+                        break;
+                }
+            } catch (e) {
+                alert('Invalid value format for selected type');
+                return;
+            }
+            
+            blockFields[currentEditingFieldIndex] = { key, value, type };
+            updateFieldList();
+            closeEditFieldModal();
+        }
+
+        function closeEditFieldModal() {
+            document.getElementById('editFieldModal').style.display = 'none';
+            currentEditingFieldIndex = -1;
+        }
+
+        function updateFieldList() {
+            const fieldList = document.getElementById('fieldList');
+            fieldList.innerHTML = '';
+            
+            blockFields.forEach((field, index) => {
+                const fieldItem = document.createElement('div');
+                fieldItem.className = 'field-item';
+                fieldItem.innerHTML = `
+                    <span><strong>${field.key}:</strong> ${JSON.stringify(field.value)}</span>
+                    <div>
+                        <button class="edit-field" onclick="editField(${index})" style="background: #007bff; color: white; border: none; padding: 0.2rem 0.5rem; border-radius: 3px; cursor: pointer; font-size: 0.8rem; margin-right: 0.3rem;">Edit</button>
+                        <button class="remove-field" onclick="removeField(${index})">Remove</button>
+                    </div>
+                `;
+                fieldList.appendChild(fieldItem);
+            });
+        }
+
+        function saveBlock() {
+            const blockId = document.getElementById('blockId').value.trim();
+            const blockWidth = parseInt(document.getElementById('blockWidth').value) || 320;
+            const blockHeight = parseInt(document.getElementById('blockHeight').value) || 480;
+            
+            if (!blockId) {
+                alert('Please enter a block ID');
+                return;
+            }
+            
+            // Check for duplicate ID (only for new blocks or when ID is changed)
+            if (blocks[blockId] && (!currentBlock || currentBlock !== blockId)) {
+                alert(`Block ID "${blockId}" already exists. Please use a unique ID.`);
+                return;
+            }
+
+            const blockData = {};
+            blockFields.forEach(field => {
+                blockData[field.key] = field.value;
+            });
+            
+            // Handle ID change for existing blocks
+            if (currentBlock && currentBlock !== blockId) {
+                // Remove old block entry
+                const oldPosition = blocks[currentBlock].position;
+                delete blocks[currentBlock];
+                
+                // Update connections to use new ID
+                connections = connections.map(conn => {
+                    if (conn.from === currentBlock) conn.from = blockId;
+                    if (conn.to === currentBlock) conn.to = blockId;
+                    return conn;
+                });
+                
+                // Create new entry with updated ID
+                blocks[blockId] = {
+                    id: blockId,
+                    data: blockData,
+                    position: oldPosition,
+                    width: blockWidth,
+                    height: blockHeight
+                };
+            } else {
+                // Create new block or update existing with same ID
+                blocks[blockId] = {
+                    id: blockId,
+                    data: blockData,
+                    position: currentBlock ? blocks[currentBlock].position : { 
+                        x: Math.random() * 300 + 50, 
+                        y: Math.random() * 200 + 50 
+                    },
+                    width: blockWidth,
+                    height: blockHeight
+                };
+            }
+            
+            renderBlocks();
+            updateCanvasSize();
+            renderConnections();
+            closeModal();
+            saveToCache();
+        }
+
+        function deleteBlock(blockId) {
+            if (confirm(`Are you sure you want to delete block ${blockId}?`)) {
+                delete blocks[blockId];
+                connections = connections.filter(conn => conn.from !== blockId && conn.to !== blockId);
+                renderBlocks();
+                updateCanvasSize();
+                renderConnections();
+                saveToCache();
+            }
+        }
+
+        function duplicateBlock(blockId) {
+            const originalBlock = blocks[blockId];
+            if (!originalBlock) return;
+            
+            // Generate new unique ID
+            let newId = blockId + '_copy';
+            let counter = 1;
+            while (blocks[newId]) {
+                newId = blockId + '_copy' + counter;
+                counter++;
+            }
+            
+            // Create new block with same data but different position
+            blocks[newId] = {
+                id: newId,
+                data: JSON.parse(JSON.stringify(originalBlock.data)), // Deep copy of data
+                position: { 
+                    x: originalBlock.position.x + 50, // Offset by 50px right
+                    y: originalBlock.position.y + 50  // Offset by 50px down
+                },
+                width: originalBlock.width,
+                height: originalBlock.height
+            };
+            
+            renderBlocks();
+            updateCanvasSize();
+            renderConnections();
+            saveToCache();
+        }
+
+        function renderBlocks() {
+            const canvas = document.getElementById('canvas');
+            const existingBlocks = canvas.querySelectorAll('.block');
+            existingBlocks.forEach(block => block.remove());
+            
+            for (const [blockId, block] of Object.entries(blocks)) {
+                const blockElement = document.createElement('div');
+                blockElement.className = 'block';
+                blockElement.style.left = block.position.x + 'px';
+                blockElement.style.top = block.position.y + 'px';
+                blockElement.style.width = (block.width || 320) + 'px';
+                blockElement.style.height = (block.height || 480) + 'px';
+                blockElement.dataset.blockId = blockId;
+                
+                let fieldsHtml = '';
+                for (const [key, value] of Object.entries(block.data)) {
+                    fieldsHtml += `
+                        <div class="field">
+                            <span class="field-key">${key}:</span>
+                            <span class="field-value">${JSON.stringify(value)}</span>
+                        </div>
+                    `;
+                }
+                
+                blockElement.innerHTML = `
+                    <div class="block-header">
+                        <div class="block-id">${blockId}</div>
+                        <div style="display: flex; gap: 5px;">
+                            <button class="delete-btn" onclick="duplicateBlock('${blockId}')" title="Duplicate block" style="background: #2ecc71;">⧉</button>
+                            <button class="delete-btn" onclick="deleteBlock('${blockId}')" title="Delete block">×</button>
+                        </div>
+                    </div>
+                    <div class="block-content">
+                        ${fieldsHtml}
+                    </div>
+                `;
+                
+                blockElement.addEventListener('mousedown', handleBlockMouseDown);
+                blockElement.addEventListener('dblclick', () => editBlock(blockId));
+                blockElement.addEventListener('click', handleBlockClick);
+                
+                canvas.appendChild(blockElement);
+            }
+        }
+
+        function handleBlockMouseDown(e) {
+            if (e.target.classList.contains('delete-btn')) return;
+            
+            isDragging = true;
+            const blockElement = e.currentTarget;
+            const blockId = blockElement.dataset.blockId;
+            
+            // Get the block's position in canvas coordinates (including zoom and scroll)
+            const blockRect = blockElement.getBoundingClientRect();
+            const canvasRect = document.getElementById('canvas').getBoundingClientRect();
+            
+            // Calculate the offset considering zoom and scroll
+            dragOffset.x = (e.clientX - canvasRect.left + canvasWrapper.scrollLeft) / canvasZoom - parseFloat(blockElement.style.left);
+            dragOffset.y = (e.clientY - canvasRect.top + canvasWrapper.scrollTop) / canvasZoom - parseFloat(blockElement.style.top);
+            
+            blockElement.style.zIndex = '1000';
+            
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mouseup', handleMouseUp);
+            
+            e.preventDefault();
+        }
+
+        function handleMouseMove(e) {
+            if (!isDragging) return;
+            
+            const blockElement = document.querySelector('.block[style*="z-index: 1000"]');
+            if (!blockElement) return;
+            
+            const blockId = blockElement.dataset.blockId;
+            const canvasRect = document.getElementById('canvas').getBoundingClientRect();
+            
+            // Calculate new position considering zoom and scroll
+            const x = (e.clientX - canvasRect.left + canvasWrapper.scrollLeft) / canvasZoom - dragOffset.x;
+            const y = (e.clientY - canvasRect.top + canvasWrapper.scrollTop) / canvasZoom - dragOffset.y;
+            
+            blockElement.style.left = Math.max(0, x) + 'px';
+            blockElement.style.top = Math.max(0, y) + 'px';
+            
+            blocks[blockId].position = { x: Math.max(0, x), y: Math.max(0, y) };
+            
+            renderConnections();
+        }
+
+        function handleMouseUp() {
+            isDragging = false;
+            const blockElement = document.querySelector('.block[style*="z-index: 1000"]');
+            if (blockElement) {
+                blockElement.style.zIndex = '';
+            }
+            
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+            updateCanvasSize();
+            saveToCache();
+        }
+
+        function handleBlockClick(e) {
+            if ((!isConnectionMode && !isRemoveConnectionMode) || isDragging) return;
+            
+            const blockId = e.currentTarget.dataset.blockId;
+            
+            if (isConnectionMode) {
+                if (!selectedBlock) {
+                    selectedBlock = blockId;
+                    e.currentTarget.classList.add('selected');
+                } else {
+                    if (selectedBlock !== blockId) {
+                        connections.push({ from: selectedBlock, to: blockId, text: '', fontSize: 16 });
+                        renderConnections();
+                        saveToCache();
+                    }
+                    document.querySelector('.block.selected')?.classList.remove('selected');
+                    selectedBlock = null;
+                }
+            }
+        }
+
+        function toggleConnectionMode() {
+            isConnectionMode = !isConnectionMode;
+            isRemoveConnectionMode = false;
+            const btn = event.target;
+            const removeBtn = document.querySelector('button[onclick="toggleRemoveConnectionMode()"]');
+            
+            // Reset remove connection button
+            removeBtn.textContent = 'Remove Connections';
+            removeBtn.classList.remove('remove-connection-mode');
+            
+            if (isConnectionMode) {
+                btn.textContent = 'Exit Connect Mode';
+                btn.classList.add('connection-mode');
+                document.getElementById('canvas').style.cursor = 'crosshair';
+                document.getElementById('arrows').classList.remove('remove-mode');
+            } else {
+                btn.textContent = 'Connect Blocks';
+                btn.classList.remove('connection-mode');
+                document.getElementById('canvas').style.cursor = 'grab';
+                document.querySelector('.block.selected')?.classList.remove('selected');
+                selectedBlock = null;
+            }
+        }
+
+        function toggleRemoveConnectionMode() {
+            isRemoveConnectionMode = !isRemoveConnectionMode;
+            isConnectionMode = false;
+            const btn = event.target;
+            const connectBtn = document.querySelector('button[onclick="toggleConnectionMode()"]');
+            
+            // Reset connection button
+            connectBtn.textContent = 'Connect Blocks';
+            connectBtn.classList.remove('connection-mode');
+            
+            if (isRemoveConnectionMode) {
+                btn.textContent = 'Exit Remove Mode';
+                btn.classList.add('remove-connection-mode');
+                document.getElementById('canvas').style.cursor = 'crosshair';
+                document.getElementById('arrows').classList.add('remove-mode');
+            } else {
+                btn.textContent = 'Remove Connections';
+                btn.classList.remove('remove-connection-mode');
+                document.getElementById('canvas').style.cursor = 'grab';
+                document.getElementById('arrows').classList.remove('remove-mode');
+            }
+            
+            // Clear any selected blocks
+            document.querySelector('.block.selected')?.classList.remove('selected');
+            selectedBlock = null;
+        }
+
+        function openArrowTextModal(fromId, toId) {
+            const connIndex = connections.findIndex(conn => conn.from === fromId && conn.to === toId);
+            if (connIndex !== -1) {
+                currentArrowIndex = connIndex;
+                document.getElementById('arrowText').value = connections[connIndex].text || '';
+                document.getElementById('arrowFontSize').value = connections[connIndex].fontSize || 12;
+                document.getElementById('arrowTextModal').style.display = 'block';
+            }
+        }
+
+        function saveArrowText() {
+            if (currentArrowIndex !== -1) {
+                const text = document.getElementById('arrowText').value.trim();
+                const fontSize = parseInt(document.getElementById('arrowFontSize').value) || 12;
+                connections[currentArrowIndex].text = text;
+                connections[currentArrowIndex].fontSize = fontSize;
+                renderConnections();
+                saveToCache();
+            }
+            closeArrowTextModal();
+        }
+
+        function closeArrowTextModal() {
+            document.getElementById('arrowTextModal').style.display = 'none';
+            currentArrowIndex = -1;
+        }
+
+        function renderConnections() {
+            const svg = document.getElementById('arrows');
+            // Clear all existing content except the defs
+            const defsContent = svg.querySelector('defs');
+            svg.innerHTML = '';
+            if (defsContent) {
+                svg.appendChild(defsContent);
+            } else {
+                svg.innerHTML = `
+                    <defs>
+                        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                            <polygon points="0 0, 10 3.5, 0 7" fill="#ff6b6b" />
+                        </marker>
+                    </defs>
+                `;
+            }
+            
+            console.log('Rendering connections:', connections.length);
+            
+            connections.forEach((conn, index) => {
+                const fromBlock = document.querySelector(`[data-block-id="${conn.from}"]`);
+                const toBlock = document.querySelector(`[data-block-id="${conn.to}"]`);
+                
+                if (fromBlock && toBlock) {
+                    const fromRect = fromBlock.getBoundingClientRect();
+                    const toRect = toBlock.getBoundingClientRect();
+                    const canvasRect = document.getElementById('canvas').getBoundingClientRect();
+                    
+                    const fromX = (fromRect.left + fromRect.width / 2 - canvasRect.left) / canvasZoom;
+                    const fromY = (fromRect.top + fromRect.height / 2 - canvasRect.top) / canvasZoom;
+                    const toX = (toRect.left + toRect.width / 2 - canvasRect.left) / canvasZoom;
+                    const toY = (toRect.top + toRect.height / 2 - canvasRect.top) / canvasZoom;
+                    
+                    // Create visible line with click handling
+                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    line.setAttribute('x1', fromX);
+                    line.setAttribute('y1', fromY);
+                    line.setAttribute('x2', toX);
+                    line.setAttribute('y2', toY);
+                    line.setAttribute('class', 'arrow-line');
+                    line.setAttribute('data-from', conn.from);
+                    line.setAttribute('data-to', conn.to);
+                    line.style.strokeWidth = '8';
+                    line.style.pointerEvents = 'stroke';
+                    
+                    // Add click handler
+                    line.onclick = function(e) {
+                        if (isRemoveConnectionMode) {
+                            const fromId = this.getAttribute('data-from');
+                            const toId = this.getAttribute('data-to');
+                            removeConnectionByIds(fromId, toId);
+                        } else {
+                            // Open text modal for editing
+                            const fromId = this.getAttribute('data-from');
+                            const toId = this.getAttribute('data-to');
+                            openArrowTextModal(fromId, toId);
+                        }
+                        e.stopPropagation();
+                        e.preventDefault();
+                    };
+                    
+                    svg.appendChild(line);
+                    
+                    // Add text if it exists
+                    if (conn.text && conn.text.trim() !== '') {
+                        const midX = (fromX + toX) / 2;
+                        const midY = (fromY + toY) / 2;
+                        const fontSize = conn.fontSize || 12;
+                        
+                        // Create background rectangle for text
+                        const textBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                        const textElement = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                        textElement.setAttribute('x', midX);
+                        textElement.setAttribute('y', midY);
+                        textElement.setAttribute('text-anchor', 'middle');
+                        textElement.setAttribute('dominant-baseline', 'middle');
+                        textElement.setAttribute('font-family', 'Segoe UI, sans-serif');
+                        textElement.setAttribute('font-size', fontSize);
+                        textElement.setAttribute('fill', '#333');
+                        textElement.setAttribute('font-weight', 'bold');
+                        textElement.textContent = conn.text;
+                        
+                        // Calculate text dimensions for background based on font size
+                        const textWidth = conn.text.length * (fontSize * 0.6) + 8;
+                        const textHeight = fontSize + 4;
+                        
+                        textBg.setAttribute('x', midX - textWidth/2);
+                        textBg.setAttribute('y', midY - textHeight/2);
+                        textBg.setAttribute('width', textWidth);
+                        textBg.setAttribute('height', textHeight);
+                        textBg.setAttribute('fill', 'rgba(255, 255, 255, 0.9)');
+                        textBg.setAttribute('stroke', 'rgba(0, 0, 0, 0.2)');
+                        textBg.setAttribute('stroke-width', '1');
+                        textBg.setAttribute('rx', '4');
+                        
+                        svg.appendChild(textBg);
+                        svg.appendChild(textElement);
+                    }
+                }
+            });
+            svg.setAttribute('width', canvas.style.width);
+            svg.setAttribute('height', canvas.style.height);
+        }
+
+        function removeConnectionByIds(fromId, toId) {
+            console.log('Removing connection from', fromId, 'to', toId);
+            console.log('Connections before removal:', connections.length);
+            
+            if (confirm('Remove this connection?')) {
+                const index = connections.findIndex(conn => conn.from === fromId && conn.to === toId);
+                if (index !== -1) {
+                    connections.splice(index, 1);
+                    console.log('Connections after removal:', connections.length);
+                    renderConnections();
+                    saveToCache();
+                } else {
+                    console.log('Connection not found!');
+                }
+            }
+        }
+
+        function removeConnection(index) {
+            console.log('Removing connection at index:', index, 'Total connections:', connections.length);
+            console.log('Connection to remove:', connections[index]);
+            
+            if (confirm('Remove this connection?')) {
+                connections.splice(index, 1);
+                console.log('Connections after removal:', connections);
+                renderConnections();
+            }
+        }
+
+        function exportToJSON() {
+            const exportData = {};
+            
+            for (const [blockId, block] of Object.entries(blocks)) {
+                exportData[blockId] = {
+                    id: blockId,
+                    ...block.data
+                };
+            }
+            
+            document.getElementById('json-output').value = JSON.stringify(exportData, null, 2);
+            document.getElementById('jsonModal').style.display = 'block';
+        }
+
+        function copyJSON() {
+            const textarea = document.getElementById('json-output');
+            textarea.select();
+            document.execCommand('copy');
+            alert('JSON copied to clipboard!');
+        }
+
+        function downloadJSON() {
+            const exportData = {};
+            
+            for (const [blockId, block] of Object.entries(blocks)) {
+                exportData[blockId] = {
+                    id: blockId,
+                    ...block.data
+                };
+            }
+            
+            const jsonString = JSON.stringify(exportData, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `blocks_export_${new Date().toISOString().slice(0, 10)}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function downloadSVG() {
+            if (Object.keys(blocks).length === 0) {
+                alert('No blocks to export!');
+                return;
+            }
+            
+            // Calculate bounding box of all blocks
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            
+            Object.values(blocks).forEach(block => {
+                const x = block.position.x;
+                const y = block.position.y;
+                const width = block.width || 320;
+                const height = block.height || 480;
+                
+                minX = Math.min(minX, x);
+                minY = Math.min(minY, y);
+                maxX = Math.max(maxX, x + width);
+                maxY = Math.max(maxY, y + height);
+            });
+            
+            // Add padding
+            const padding = 50;
+            minX -= padding;
+            minY -= padding;
+            maxX += padding;
+            maxY += padding;
+            
+            const width = maxX - minX;
+            const height = maxY - minY;
+            
+            // Ensure minimum Full HD quality
+            const scale = Math.max(1, Math.max(1920 / width, 1080 / height));
+            const scaledWidth = width * scale;
+            const scaledHeight = height * scale;
+            
+            // Create SVG
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('width', scaledWidth);
+            svg.setAttribute('height', scaledHeight);
+            svg.setAttribute('viewBox', `${minX} ${minY} ${width} ${height}`);
+            svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+            
+            // Add background
+            const background = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            background.setAttribute('x', minX);
+            background.setAttribute('y', minY);
+            background.setAttribute('width', width);
+            background.setAttribute('height', height);
+            background.setAttribute('fill', 'url(#backgroundGradient)');
+            
+            // Add gradient definition
+            const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+            const gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+            gradient.setAttribute('id', 'backgroundGradient');
+            gradient.setAttribute('x1', '0%');
+            gradient.setAttribute('y1', '0%');
+            gradient.setAttribute('x2', '100%');
+            gradient.setAttribute('y2', '100%');
+            
+            const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+            stop1.setAttribute('offset', '0%');
+            stop1.setAttribute('stop-color', '#667eea');
+            
+            const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+            stop2.setAttribute('offset', '100%');
+            stop2.setAttribute('stop-color', '#764ba2');
+            
+            gradient.appendChild(stop1);
+            gradient.appendChild(stop2);
+            defs.appendChild(gradient);
+            
+            // Add arrow marker
+            const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+            marker.setAttribute('id', 'arrowhead');
+            marker.setAttribute('markerWidth', '10');
+            marker.setAttribute('markerHeight', '7');
+            marker.setAttribute('refX', '9');
+            marker.setAttribute('refY', '3.5');
+            marker.setAttribute('orient', 'auto');
+            
+            const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+            polygon.setAttribute('points', '0 0, 10 3.5, 0 7');
+            polygon.setAttribute('fill', '#ff6b6b');
+            
+            marker.appendChild(polygon);
+            defs.appendChild(marker);
+            svg.appendChild(defs);
+            svg.appendChild(background);
+            
+            // Add connections
+            connections.forEach(conn => {
+                const fromBlock = blocks[conn.from];
+                const toBlock = blocks[conn.to];
+                
+                if (fromBlock && toBlock) {
+                    const fromX = fromBlock.position.x + (fromBlock.width || 320) / 2;
+                    const fromY = fromBlock.position.y + (fromBlock.height || 480) / 2;
+                    const toX = toBlock.position.x + (toBlock.width || 320) / 2;
+                    const toY = toBlock.position.y + (toBlock.height || 480) / 2;
+                    
+                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    line.setAttribute('x1', fromX);
+                    line.setAttribute('y1', fromY);
+                    line.setAttribute('x2', toX);
+                    line.setAttribute('y2', toY);
+                    line.setAttribute('stroke', '#ff6b6b');
+                    line.setAttribute('stroke-width', '2');
+                    line.setAttribute('marker-end', 'url(#arrowhead)');
+                    
+                    svg.appendChild(line);
+                    
+                    // Add text if it exists
+                    if (conn.text && conn.text.trim() !== '') {
+                        const midX = (fromX + toX) / 2;
+                        const midY = (fromY + toY) / 2;
+                        const fontSize = conn.fontSize || 12;
+                        
+                        // Create background rectangle for text
+                        const textBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                        const textWidth = conn.text.length * (fontSize * 0.6) + 8;
+                        const textHeight = fontSize + 4;
+                        
+                        textBg.setAttribute('x', midX - textWidth/2);
+                        textBg.setAttribute('y', midY - textHeight/2);
+                        textBg.setAttribute('width', textWidth);
+                        textBg.setAttribute('height', textHeight);
+                        textBg.setAttribute('fill', 'rgba(255, 255, 255, 0.9)');
+                        textBg.setAttribute('stroke', 'rgba(0, 0, 0, 0.2)');
+                        textBg.setAttribute('stroke-width', '1');
+                        textBg.setAttribute('rx', '4');
+                        
+                        const textElement = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                        textElement.setAttribute('x', midX);
+                        textElement.setAttribute('y', midY);
+                        textElement.setAttribute('text-anchor', 'middle');
+                        textElement.setAttribute('dominant-baseline', 'middle');
+                        textElement.setAttribute('font-family', 'Segoe UI, sans-serif');
+                        textElement.setAttribute('font-size', fontSize);
+                        textElement.setAttribute('fill', '#333');
+                        textElement.setAttribute('font-weight', 'bold');
+                        textElement.textContent = conn.text;
+                        
+                        svg.appendChild(textBg);
+                        svg.appendChild(textElement);
+                    }
+                }
+            });
+            
+            // Add blocks
+            Object.values(blocks).forEach(block => {
+                const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                
+                // Block background
+                const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                rect.setAttribute('x', block.position.x);
+                rect.setAttribute('y', block.position.y);
+                rect.setAttribute('width', block.width || 320);
+                rect.setAttribute('height', block.height || 480);
+                rect.setAttribute('fill', 'rgba(255, 255, 255, 0.95)');
+                rect.setAttribute('stroke', 'rgba(255, 255, 255, 0.2)');
+                rect.setAttribute('stroke-width', '1');
+                rect.setAttribute('rx', '12');
+                
+                g.appendChild(rect);
+                
+                // Block title
+                const title = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                title.setAttribute('x', block.position.x + 16);
+                title.setAttribute('y', block.position.y + 30);
+                title.setAttribute('font-family', 'Segoe UI, sans-serif');
+                title.setAttribute('font-size', '16');
+                title.setAttribute('font-weight', 'bold');
+                title.setAttribute('fill', '#333');
+                title.textContent = block.id;
+                
+                g.appendChild(title);
+                
+                // Block fields with height boundary checking
+                let yOffset = 60;
+                const maxWidth = (block.width || 320) - 32;
+                const lineHeight = 18;
+                const blockHeight = block.height || 480;
+                const maxY = block.position.y + blockHeight - 20; // Leave some bottom padding
+
+                Object.entries(block.data).forEach(([key, value]) => {
+                    // Check if we have space for at least one line
+                    if (block.position.y + yOffset + lineHeight > maxY) {
+                        return; // Skip this field if no space
+                    }
+                    
+                    const fullText = `${key}: ${JSON.stringify(value)}`;
+                    const words = fullText.split(' ');
+                    let currentLine = '';
+                    let lines = [];
+                    
+                    // Simple word wrapping algorithm
+                    words.forEach(word => {
+                        const testLine = currentLine ? currentLine + ' ' + word : word;
+                        const estimatedWidth = testLine.length * 7;
+                        
+                        if (estimatedWidth <= maxWidth) {
+                            currentLine = testLine;
+                        } else {
+                            if (currentLine) {
+                                lines.push(currentLine);
+                                currentLine = word;
+                            } else {
+                                lines.push(word);
+                                currentLine = '';
+                            }
+                        }
+                    });
+                    
+                    if (currentLine) {
+                        lines.push(currentLine);
+                    }
+                    
+                    // Render each line, but stop if we exceed block height
+                    lines.forEach((line, lineIndex) => {
+                        const lineY = block.position.y + yOffset + (lineIndex * lineHeight);
+                        
+                        // Check if this line would exceed the block height
+                        if (lineY > maxY) {
+                            return; // Skip this line and all subsequent lines
+                        }
+                        
+                        const fieldText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                        fieldText.setAttribute('x', block.position.x + 16);
+                        fieldText.setAttribute('y', lineY);
+                        fieldText.setAttribute('font-family', 'Segoe UI, sans-serif');
+                        fieldText.setAttribute('font-size', '12');
+                        fieldText.setAttribute('fill', '#2c3e50');
+                        
+                        if (lineIndex === 0) {
+                            const keyMatch = line.match(/^([^:]+):(.*)/);
+                            if (keyMatch) {
+                                const keySpan = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
+                                keySpan.setAttribute('font-weight', 'bold');
+                                keySpan.textContent = keyMatch[1] + ':';
+                                
+                                const valueSpan = document.createElementNS('http://www.w3.org/2000/svg', 'tspan');
+                                valueSpan.setAttribute('fill', '#34495e');
+                                valueSpan.textContent = keyMatch[2];
+                                
+                                fieldText.appendChild(keySpan);
+                                fieldText.appendChild(valueSpan);
+                            } else {
+                                fieldText.textContent = line;
+                            }
+                        } else {
+                            fieldText.setAttribute('fill', '#34495e');
+                            fieldText.textContent = line;
+                        }
+                        
+                        g.appendChild(fieldText);
+                    });
+                    
+                    yOffset += lines.length * lineHeight + 5;
+                    
+                    // Stop processing more fields if we're close to the bottom
+                    if (block.position.y + yOffset > maxY) {
+                        return;
+                    }
+                });
+                
+                svg.appendChild(g);
+            });
+            
+            // Download SVG
+            const svgString = new XMLSerializer().serializeToString(svg);
+            const blob = new Blob([svgString], { type: 'image/svg+xml' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `blocks_diagram_${new Date().toISOString().slice(0, 10)}.svg`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function clearAll() {
+            if (confirm('Are you sure you want to clear all blocks and connections?')) {
+                blocks = {};
+                connections = [];
+                currentArrowIndex = -1;
+                renderBlocks();
+                updateCanvasSize();
+                renderConnections();
+                localStorage.removeItem('blockConstructorCache');
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('blockModal').style.display = 'none';
+        }
+
+        function closeJSONModal() {
+            document.getElementById('jsonModal').style.display = 'none';
+        }
+
+        function importFromJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    for (const [blockId, blockContent] of Object.entries(importedData)) {
+                        const { id, ...fields } = blockContent;
+
+                        blocks[blockId] = {
+                            id: blockId,
+                            data: fields,
+                            position: {
+                                x: Math.random() * 400 + 100,
+                                y: Math.random() * 300 + 100
+                            }
+                        };
+                    }
+                    renderBlocks();
+                    updateCanvasSize();
+                    renderConnections();
+                    saveToCache();
+                    alert("Blocks imported successfully!");
+                } catch (err) {
+                    alert("Invalid JSON format");
+                    console.error(err);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Close modals when clicking outside
+        window.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal')) {
+                e.target.style.display = 'none';
+                if (e.target.id === 'arrowTextModal') {
+                    currentArrowIndex = -1;
+                }
+                if (e.target.id === 'editFieldModal') {
+                    currentEditingFieldIndex = -1;
+                }
+            }
+        });
+
+        // Handle window resize for arrow repositioning
+        window.addEventListener('resize', () => {
+            setTimeout(renderConnections, 100);
+        });
+
+        window.onload = () => {
+            loadFromCache();
+            updateCanvasSize();
+            renderConnections();
+            canvasWrapper.scrollLeft = 2000;
+            canvasWrapper.scrollTop = 2000;
+        };
+
+    </script>
+</body>
+</html>
