@@ -1130,6 +1130,7 @@
             
             console.log('Rendering connections:', connections.length);
             
+            // First pass: render all arrows
             connections.forEach((conn, index) => {
                 const fromBlock = document.querySelector(`[data-block-id="${conn.from}"]`);
                 const toBlock = document.querySelector(`[data-block-id="${conn.to}"]`);
@@ -1153,34 +1154,28 @@
                     let fromX, fromY, toX, toY;
 
                     if (isVerticalConnection) {
-                        // Vertical connection (blocks are stacked)
                         if (fromIsAbove) {
-                            // From block is above to block
-                            fromX = fromCenterX; // Center X of from block
-                            fromY = fromRect.bottom; // Bottom of from block
-                            toX = toCenterX; // Center X of to block
-                            toY = toRect.top; // Top of to block
+                            fromX = fromCenterX;
+                            fromY = fromRect.bottom;
+                            toX = toCenterX;
+                            toY = toRect.top;
                         } else {
-                            // From block is below to block
-                            fromX = fromCenterX; // Center X of from block
-                            fromY = fromRect.top; // Top of from block
-                            toX = toCenterX; // Center X of to block
-                            toY = toRect.bottom; // Bottom of to block
+                            fromX = fromCenterX;
+                            fromY = fromRect.top;
+                            toX = toCenterX;
+                            toY = toRect.bottom;
                         }
                     } else {
-                        // Horizontal connection (blocks are side by side)
                         if (fromIsLeft) {
-                            // From block is left of to block
-                            fromX = fromRect.right; // Right side of from block
-                            fromY = fromCenterY; // Center Y of from block
-                            toX = toRect.left; // Left side of to block
-                            toY = toCenterY; // Center Y of to block
+                            fromX = fromRect.right;
+                            fromY = fromCenterY;
+                            toX = toRect.left;
+                            toY = toCenterY;
                         } else {
-                            // From block is right of to block
-                            fromX = fromRect.left; // Left side of from block
-                            fromY = fromCenterY; // Center Y of from block
-                            toX = toRect.right; // Right side of to block
-                            toY = toCenterY; // Center Y of to block
+                            fromX = fromRect.left;
+                            fromY = fromCenterY;
+                            toX = toRect.right;
+                            toY = toCenterY;
                         }
                     }
 
@@ -1209,7 +1204,6 @@
                             const toId = this.getAttribute('data-to');
                             removeConnectionByIds(fromId, toId);
                         } else {
-                            // Open text modal for editing
                             const fromId = this.getAttribute('data-from');
                             const toId = this.getAttribute('data-to');
                             openArrowTextModal(fromId, toId);
@@ -1219,9 +1213,63 @@
                     };
                     
                     svg.appendChild(line);
+                }
+            });
+
+            // Second pass: render all text labels on top
+            connections.forEach((conn, index) => {
+                if (conn.text && conn.text.trim() !== '') {
+                    const fromBlock = document.querySelector(`[data-block-id="${conn.from}"]`);
+                    const toBlock = document.querySelector(`[data-block-id="${conn.to}"]`);
                     
-                    // Add text if it exists
-                    if (conn.text && conn.text.trim() !== '') {
+                    if (fromBlock && toBlock) {
+                        const fromRect = fromBlock.getBoundingClientRect();
+                        const toRect = toBlock.getBoundingClientRect();
+                        const canvasRect = document.getElementById('canvas').getBoundingClientRect();
+                        
+                        // Recalculate connection points (same logic as above)
+                        const fromCenterX = fromRect.left + fromRect.width / 2;
+                        const fromCenterY = fromRect.top + fromRect.height / 2;
+                        const toCenterX = toRect.left + toRect.width / 2;
+                        const toCenterY = toRect.top + toRect.height / 2;
+
+                        const isVerticalConnection = Math.abs(fromCenterY - toCenterY) > Math.abs(fromCenterX - toCenterX);
+                        const fromIsAbove = fromCenterY < toCenterY;
+                        const fromIsLeft = fromCenterX < toCenterX;
+
+                        let fromX, fromY, toX, toY;
+
+                        if (isVerticalConnection) {
+                            if (fromIsAbove) {
+                                fromX = fromCenterX;
+                                fromY = fromRect.bottom;
+                                toX = toCenterX;
+                                toY = toRect.top;
+                            } else {
+                                fromX = fromCenterX;
+                                fromY = fromRect.top;
+                                toX = toCenterX;
+                                toY = toRect.bottom;
+                            }
+                        } else {
+                            if (fromIsLeft) {
+                                fromX = fromRect.right;
+                                fromY = fromCenterY;
+                                toX = toRect.left;
+                                toY = toCenterY;
+                            } else {
+                                fromX = fromRect.left;
+                                fromY = fromCenterY;
+                                toX = toRect.right;
+                                toY = toCenterY;
+                            }
+                        }
+
+                        fromX = (fromX - canvasRect.left) / canvasZoom;
+                        fromY = (fromY - canvasRect.top) / canvasZoom;
+                        toX = (toX - canvasRect.left) / canvasZoom;
+                        toY = (toY - canvasRect.top) / canvasZoom;
+                        
                         const midX = (fromX + toX) / 2;
                         const midY = (fromY + toY) / 2;
                         const fontSize = conn.fontSize || 12;
@@ -1555,41 +1603,89 @@
                     line.setAttribute('marker-end', 'url(#arrowhead)');
                     
                     svg.appendChild(line);
+                }
+            });
+
+            // Add connection texts on top of arrows
+            connections.forEach(conn => {
+                const fromBlock = blocks[conn.from];
+                const toBlock = blocks[conn.to];
+                
+                if (fromBlock && toBlock && conn.text && conn.text.trim() !== '') {
+                    // Recalculate connection points (copy the same logic from above)
+                    const fromWidth = fromBlock.width || 320;
+                    const fromHeight = fromBlock.height || 480;
+                    const toWidth = toBlock.width || 320;
+                    const toHeight = toBlock.height || 480;
                     
-                    // Add text if it exists
-                    if (conn.text && conn.text.trim() !== '') {
-                        const midX = (fromX + toX) / 2;
-                        const midY = (fromY + toY) / 2;
-                        const fontSize = conn.fontSize || 12;
-                        
-                        // Create background rectangle for text
-                        const textBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-                        const textWidth = conn.text.length * (fontSize * 0.6) + 8;
-                        const textHeight = fontSize + 4;
-                        
-                        textBg.setAttribute('x', midX - textWidth/2);
-                        textBg.setAttribute('y', midY - textHeight/2);
-                        textBg.setAttribute('width', textWidth);
-                        textBg.setAttribute('height', textHeight);
-                        textBg.setAttribute('fill', 'rgba(255, 255, 255, 0.9)');
-                        textBg.setAttribute('stroke', 'rgba(0, 0, 0, 0.2)');
-                        textBg.setAttribute('stroke-width', '1');
-                        textBg.setAttribute('rx', '4');
-                        
-                        const textElement = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                        textElement.setAttribute('x', midX);
-                        textElement.setAttribute('y', midY);
-                        textElement.setAttribute('text-anchor', 'middle');
-                        textElement.setAttribute('dominant-baseline', 'middle');
-                        textElement.setAttribute('font-family', 'Segoe UI, sans-serif');
-                        textElement.setAttribute('font-size', fontSize);
-                        textElement.setAttribute('fill', '#333');
-                        textElement.setAttribute('font-weight', 'bold');
-                        textElement.textContent = conn.text;
-                        
-                        svg.appendChild(textBg);
-                        svg.appendChild(textElement);
+                    const fromCenterX = fromBlock.position.x + fromWidth / 2;
+                    const fromCenterY = fromBlock.position.y + fromHeight / 2;
+                    const toCenterX = toBlock.position.x + toWidth / 2;
+                    const toCenterY = toBlock.position.y + toHeight / 2;
+                    
+                    const isVerticalConnection = Math.abs(fromCenterY - toCenterY) > Math.abs(fromCenterX - toCenterX);
+                    const fromIsAbove = fromCenterY < toCenterY;
+                    const fromIsLeft = fromCenterX < toCenterX;
+                    
+                    let fromX, fromY, toX, toY;
+                    
+                    if (isVerticalConnection) {
+                        if (fromIsAbove) {
+                            fromX = fromCenterX;
+                            fromY = fromBlock.position.y + fromHeight;
+                            toX = toCenterX;
+                            toY = toBlock.position.y;
+                        } else {
+                            fromX = fromCenterX;
+                            fromY = fromBlock.position.y;
+                            toX = toCenterX;
+                            toY = toBlock.position.y + toHeight;
+                        }
+                    } else {
+                        if (fromIsLeft) {
+                            fromX = fromBlock.position.x + fromWidth;
+                            fromY = fromCenterY;
+                            toX = toBlock.position.x;
+                            toY = toCenterY;
+                        } else {
+                            fromX = fromBlock.position.x;
+                            fromY = fromCenterY;
+                            toX = toBlock.position.x + toWidth;
+                            toY = toCenterY;
+                        }
                     }
+                    
+                    const midX = (fromX + toX) / 2;
+                    const midY = (fromY + toY) / 2;
+                    const fontSize = conn.fontSize || 12;
+                                        
+                    // Create background rectangle for text
+                    const textBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                    const textWidth = conn.text.length * (fontSize * 0.6) + 8;
+                    const textHeight = fontSize + 4;
+                    
+                    textBg.setAttribute('x', midX - textWidth/2);
+                    textBg.setAttribute('y', midY - textHeight/2);
+                    textBg.setAttribute('width', textWidth);
+                    textBg.setAttribute('height', textHeight);
+                    textBg.setAttribute('fill', 'rgba(255, 255, 255, 0.9)');
+                    textBg.setAttribute('stroke', 'rgba(0, 0, 0, 0.2)');
+                    textBg.setAttribute('stroke-width', '1');
+                    textBg.setAttribute('rx', '4');
+                    
+                    const textElement = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    textElement.setAttribute('x', midX);
+                    textElement.setAttribute('y', midY);
+                    textElement.setAttribute('text-anchor', 'middle');
+                    textElement.setAttribute('dominant-baseline', 'middle');
+                    textElement.setAttribute('font-family', 'Segoe UI, sans-serif');
+                    textElement.setAttribute('font-size', fontSize);
+                    textElement.setAttribute('fill', '#333');
+                    textElement.setAttribute('font-weight', 'bold');
+                    textElement.textContent = conn.text;
+
+                    svg.appendChild(textBg);
+                    svg.appendChild(textElement);
                 }
             });
             
