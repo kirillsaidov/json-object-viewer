@@ -66,18 +66,23 @@
             border: none;
         }
 
-        .btn.tertiary {
+        .btn.buttonStyle3 {
             background: linear-gradient(135deg, #6c5ce7, #341f97);
             border: none;
         }
 
-        .btn.quaternary {
+        .btn.buttonStyle4 {
             background: linear-gradient(135deg, #00f2c3, #0abde3); 
             border: none;
         }
 
-        .btn.quinary {
+        .btn.buttonStyle5 {
             background: linear-gradient(135deg, #f6d365, #fda085); 
+            border: none;
+        }
+
+        .btn.buttonStyle6 {
+            background: linear-gradient(135deg, #6c5ce7, #0abde3); 
             border: none;
         }
 
@@ -342,10 +347,11 @@
             <button class="btn" onclick="exportToJSON()">Export JSON</button>
             <input type="file" id="jsonFileInput" accept=".json" style="display: none;" onchange="importFromJSON(event)">
             <button class="btn" onclick="document.getElementById('jsonFileInput').click()">Import JSON</button>
-            <button class="btn quinary" onclick="downloadSVG()">Download SVG</button>
-            <button class="btn tertiary" onclick="exportCache()">Export Graph File</button>
+            <button class="btn buttonStyle5" onclick="downloadSVG()">Download SVG</button>
+            <button class="btn buttonStyle6" onclick="downloadJPEG()">Download JPEG</button>
+            <button class="btn buttonStyle3" onclick="exportCache()">Export Graph File</button>
             <input type="file" id="cacheFileInput" accept=".graph.json" style="display: none;" onchange="importCache(event)">
-            <button class="btn quaternary" onclick="document.getElementById('cacheFileInput').click()">Import Graph File</button>
+            <button class="btn buttonStyle4" onclick="document.getElementById('cacheFileInput').click()">Import Graph File</button>
         </div>
     </div>
 
@@ -1388,7 +1394,7 @@
             URL.revokeObjectURL(url);
         }
 
-        function downloadSVG() {
+        function downloadSVG(return_svg_string = false) {
             if (Object.keys(blocks).length === 0) {
                 alert('No blocks to export!');
                 return;
@@ -1798,16 +1804,76 @@
             
             // Download SVG
             const svgString = new XMLSerializer().serializeToString(svg);
-            const blob = new Blob([svgString], { type: 'image/svg+xml' });
-            const url = URL.createObjectURL(blob);
+            if (!return_svg_string) {
+                const blob = new Blob([svgString], { type: 'image/svg+xml' });
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `blocks_diagram_${new Date().toISOString().slice(0, 10)}.svg`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+            return svgString
+        }
+
+        function downloadJPEG() {
+            if (typeof blocks === 'undefined' || Object.keys(blocks).length === 0) {
+                alert('No blocks to export!');
+                return;
+            }
             
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `blocks_diagram_${new Date().toISOString().slice(0, 10)}.svg`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+            // Get SVG string from downloadSVG function
+            const svgString = downloadSVG(true);
+            if (!svgString) {
+                alert('Error generating SVG for JPEG conversion');
+                return;
+            }
+            
+            // Calculate dimensions for high quality output
+            const parser = new DOMParser();
+            const svgDoc = parser.parseFromString(svgString, 'image/svg+xml');
+            const svgElement = svgDoc.documentElement;
+            
+            const width = parseFloat(svgElement.getAttribute('width'));
+            const height = parseFloat(svgElement.getAttribute('height'));
+            
+            // Convert SVG to JPEG
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+            
+            canvas.width = width;
+            canvas.height = height;
+            
+            img.onload = function() {
+                // Fill with white background for JPEG
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0);
+                
+                // Convert to JPEG blob
+                canvas.toBlob(function(blob) {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `blocks_diagram_${new Date().toISOString().slice(0, 10)}.jpg`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }, 'image/jpeg', 0.95); // 95% quality
+            };
+            
+            img.onerror = function() {
+                alert('Error converting to JPEG. Please try again.');
+            };
+            
+            const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+            const svgUrl = URL.createObjectURL(svgBlob);
+            img.src = svgUrl;
         }
 
         function clearAll() {
