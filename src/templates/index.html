@@ -1360,7 +1360,7 @@
                 };
             }
             
-            document.getElementById('json-output').value = JSON.stringify(exportData, null, 2);
+            document.getElementById('json-output').value = JSON.stringify(exportData, null, 4);
             document.getElementById('jsonModal').style.display = 'block';
         }
 
@@ -1381,7 +1381,7 @@
                 };
             }
             
-            const jsonString = JSON.stringify(exportData, null, 2);
+            const jsonString = JSON.stringify(exportData, null, 4);
             const blob = new Blob([jsonString], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             
