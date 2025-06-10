@@ -1139,10 +1139,56 @@
                     const toRect = toBlock.getBoundingClientRect();
                     const canvasRect = document.getElementById('canvas').getBoundingClientRect();
                     
-                    const fromX = (fromRect.left + fromRect.width / 2 - canvasRect.left) / canvasZoom;
-                    const fromY = (fromRect.top + fromRect.height - canvasRect.top) / canvasZoom;
-                    const toX = (toRect.left + toRect.width / 2 - canvasRect.left) / canvasZoom;
-                    const toY = (toRect.top - canvasRect.top) / canvasZoom;
+                    // Calculate block centers for comparison
+                    const fromCenterX = fromRect.left + fromRect.width / 2;
+                    const fromCenterY = fromRect.top + fromRect.height / 2;
+                    const toCenterX = toRect.left + toRect.width / 2;
+                    const toCenterY = toRect.top + toRect.height / 2;
+
+                    // Determine relative positions
+                    const isVerticalConnection = Math.abs(fromCenterY - toCenterY) > Math.abs(fromCenterX - toCenterX);
+                    const fromIsAbove = fromCenterY < toCenterY;
+                    const fromIsLeft = fromCenterX < toCenterX;
+
+                    let fromX, fromY, toX, toY;
+
+                    if (isVerticalConnection) {
+                        // Vertical connection (blocks are stacked)
+                        if (fromIsAbove) {
+                            // From block is above to block
+                            fromX = fromCenterX; // Center X of from block
+                            fromY = fromRect.bottom; // Bottom of from block
+                            toX = toCenterX; // Center X of to block
+                            toY = toRect.top; // Top of to block
+                        } else {
+                            // From block is below to block
+                            fromX = fromCenterX; // Center X of from block
+                            fromY = fromRect.top; // Top of from block
+                            toX = toCenterX; // Center X of to block
+                            toY = toRect.bottom; // Bottom of to block
+                        }
+                    } else {
+                        // Horizontal connection (blocks are side by side)
+                        if (fromIsLeft) {
+                            // From block is left of to block
+                            fromX = fromRect.right; // Right side of from block
+                            fromY = fromCenterY; // Center Y of from block
+                            toX = toRect.left; // Left side of to block
+                            toY = toCenterY; // Center Y of to block
+                        } else {
+                            // From block is right of to block
+                            fromX = fromRect.left; // Left side of from block
+                            fromY = fromCenterY; // Center Y of from block
+                            toX = toRect.right; // Right side of to block
+                            toY = toCenterY; // Center Y of to block
+                        }
+                    }
+
+                    // Convert to canvas coordinates
+                    fromX = (fromX - canvasRect.left) / canvasZoom;
+                    fromY = (fromY - canvasRect.top) / canvasZoom;
+                    toX = (toX - canvasRect.left) / canvasZoom;
+                    toY = (toY - canvasRect.top) / canvasZoom;
                     
                     // Create visible line with click handling
                     const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
@@ -1293,6 +1339,71 @@
                 return;
             }
             
+            // Helper function to format values for better wrapping
+            function formatValue(value, maxLength = 40) {
+                if (typeof value === 'string') {
+                    return value;
+                } else if (typeof value === 'object' && value !== null) {
+                    if (Array.isArray(value)) {
+                        // Format arrays with line breaks
+                        if (value.length === 0) return '[]';
+                        const items = value.map(item => 
+                            typeof item === 'object' ? JSON.stringify(item) : String(item)
+                        );
+                        return '[' + items.join(', ') + ']';
+                    } else {
+                        // Format objects with line breaks
+                        const entries = Object.entries(value);
+                        if (entries.length === 0) return '{}';
+                        const formatted = entries.map(([k, v]) => 
+                            `${k}: ${typeof v === 'object' ? JSON.stringify(v) : String(v)}`
+                        );
+                        return '{' + formatted.join(', ') + '}';
+                    }
+                }
+                return String(value);
+            }
+            
+            // Helper function to wrap text properly
+            function wrapText(text, maxWidth, fontSize = 12) {
+                const charWidth = fontSize * 0.6; // Approximate character width
+                const maxCharsPerLine = Math.floor(maxWidth / charWidth);
+                
+                if (text.length <= maxCharsPerLine) {
+                    return [text];
+                }
+                
+                const words = text.split(' ');
+                const lines = [];
+                let currentLine = '';
+                
+                words.forEach(word => {
+                    const testLine = currentLine ? currentLine + ' ' + word : word;
+                    
+                    if (testLine.length <= maxCharsPerLine) {
+                        currentLine = testLine;
+                    } else {
+                        if (currentLine) {
+                            lines.push(currentLine);
+                            currentLine = word;
+                        } else {
+                            // Word is too long, need to break it
+                            while (word.length > maxCharsPerLine) {
+                                lines.push(word.substring(0, maxCharsPerLine - 1) + '-');
+                                word = word.substring(maxCharsPerLine - 1);
+                            }
+                            currentLine = word;
+                        }
+                    }
+                });
+                
+                if (currentLine) {
+                    lines.push(currentLine);
+                }
+                
+                return lines;
+            }
+            
             // Calculate bounding box of all blocks
             let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
             
@@ -1383,10 +1494,56 @@
                 const toBlock = blocks[conn.to];
                 
                 if (fromBlock && toBlock) {
-                    const fromX = fromBlock.position.x + (fromBlock.width || 320) / 2;
-                    const fromY = fromBlock.position.y + (fromBlock.height || 480) / 2;
-                    const toX = toBlock.position.x + (toBlock.width || 320) / 2;
-                    const toY = toBlock.position.y;
+                    // Get block dimensions with defaults
+                    const fromWidth = fromBlock.width || 320;
+                    const fromHeight = fromBlock.height || 480;
+                    const toWidth = toBlock.width || 320;
+                    const toHeight = toBlock.height || 480;
+                    
+                    // Calculate block centers for comparison
+                    const fromCenterX = fromBlock.position.x + fromWidth / 2;
+                    const fromCenterY = fromBlock.position.y + fromHeight / 2;
+                    const toCenterX = toBlock.position.x + toWidth / 2;
+                    const toCenterY = toBlock.position.y + toHeight / 2;
+                    
+                    // Determine relative positions
+                    const isVerticalConnection = Math.abs(fromCenterY - toCenterY) > Math.abs(fromCenterX - toCenterX);
+                    const fromIsAbove = fromCenterY < toCenterY;
+                    const fromIsLeft = fromCenterX < toCenterX;
+                    
+                    let fromX, fromY, toX, toY;
+                    
+                    if (isVerticalConnection) {
+                        // Vertical connection (blocks are stacked)
+                        if (fromIsAbove) {
+                            // From block is above to block
+                            fromX = fromCenterX; // Center X of from block
+                            fromY = fromBlock.position.y + fromHeight; // Bottom of from block
+                            toX = toCenterX; // Center X of to block
+                            toY = toBlock.position.y; // Top of to block
+                        } else {
+                            // From block is below to block
+                            fromX = fromCenterX; // Center X of from block
+                            fromY = fromBlock.position.y; // Top of from block
+                            toX = toCenterX; // Center X of to block
+                            toY = toBlock.position.y + toHeight; // Bottom of to block
+                        }
+                    } else {
+                        // Horizontal connection (blocks are side by side)
+                        if (fromIsLeft) {
+                            // From block is left of to block
+                            fromX = fromBlock.position.x + fromWidth; // Right side of from block
+                            fromY = fromCenterY; // Center Y of from block
+                            toX = toBlock.position.x; // Left side of to block
+                            toY = toCenterY; // Center Y of to block
+                        } else {
+                            // From block is right of to block
+                            fromX = fromBlock.position.x; // Left side of from block
+                            fromY = fromCenterY; // Center Y of from block
+                            toX = toBlock.position.x + toWidth; // Right side of to block
+                            toY = toCenterY; // Center Y of to block
+                        }
+                    }
                     
                     const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
                     line.setAttribute('x1', fromX);
@@ -1465,7 +1622,7 @@
                 
                 g.appendChild(title);
                 
-                // Block fields with height boundary checking
+                // Block fields with proper wrapping
                 let yOffset = 60;
                 const maxWidth = (block.width || 320) - 32;
                 const lineHeight = 18;
@@ -1478,32 +1635,12 @@
                         return; // Skip this field if no space
                     }
                     
-                    const fullText = `${key}: ${JSON.stringify(value)}`;
-                    const words = fullText.split(' ');
-                    let currentLine = '';
-                    let lines = [];
+                    // Format the value properly for wrapping
+                    const formattedValue = formatValue(value);
+                    const fullText = `${key}: ${formattedValue}`;
                     
-                    // Simple word wrapping algorithm
-                    words.forEach(word => {
-                        const testLine = currentLine ? currentLine + ' ' + word : word;
-                        const estimatedWidth = testLine.length * 7;
-                        
-                        if (estimatedWidth <= maxWidth) {
-                            currentLine = testLine;
-                        } else {
-                            if (currentLine) {
-                                lines.push(currentLine);
-                                currentLine = word;
-                            } else {
-                                lines.push(word);
-                                currentLine = '';
-                            }
-                        }
-                    });
-                    
-                    if (currentLine) {
-                        lines.push(currentLine);
-                    }
+                    // Use the improved wrapping function
+                    const lines = wrapText(fullText, maxWidth, 12);
                     
                     // Render each line, but stop if we exceed block height
                     lines.forEach((line, lineIndex) => {
