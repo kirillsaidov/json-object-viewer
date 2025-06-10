@@ -1140,9 +1140,9 @@
                     const canvasRect = document.getElementById('canvas').getBoundingClientRect();
                     
                     const fromX = (fromRect.left + fromRect.width / 2 - canvasRect.left) / canvasZoom;
-                    const fromY = (fromRect.top + fromRect.height / 2 - canvasRect.top) / canvasZoom;
+                    const fromY = (fromRect.top + fromRect.height - canvasRect.top) / canvasZoom;
                     const toX = (toRect.left + toRect.width / 2 - canvasRect.left) / canvasZoom;
-                    const toY = (toRect.top + toRect.height / 2 - canvasRect.top) / canvasZoom;
+                    const toY = (toRect.top - canvasRect.top) / canvasZoom;
                     
                     // Create visible line with click handling
                     const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
@@ -1386,7 +1386,7 @@
                     const fromX = fromBlock.position.x + (fromBlock.width || 320) / 2;
                     const fromY = fromBlock.position.y + (fromBlock.height || 480) / 2;
                     const toX = toBlock.position.x + (toBlock.width || 320) / 2;
-                    const toY = toBlock.position.y + (toBlock.height || 480) / 2;
+                    const toY = toBlock.position.y;
                     
                     const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
                     line.setAttribute('x1', fromX);
