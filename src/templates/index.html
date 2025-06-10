@@ -20,6 +20,12 @@
         }
 
         .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
             padding: 1rem;
@@ -28,9 +34,10 @@
 
         .controls {
             display: flex;
-            gap: 1rem;
-            align-items: center;
             flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            justify-content: flex-start;
         }
 
         .btn {
