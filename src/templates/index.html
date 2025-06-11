@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Block Constructor</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -61,6 +62,10 @@
             border: none;
         }
 
+        .btn.primary:hover {
+            background-color: #0056b3;
+        }
+
         .btn.secondary {
             background: linear-gradient(135deg, #00d2d3, #54a0ff);
             border: none;
@@ -84,6 +89,11 @@
         .btn.buttonStyle6 {
             background: linear-gradient(135deg, #6c5ce7, #0abde3); 
             border: none;
+        }
+
+        .btn.buttonStyle7 {
+            background: linear-gradient(135deg, #6c5ce7, #0abde3); 
+            border: solid;
         }
 
         .canvas-container {
@@ -222,9 +232,13 @@
             border-radius: 12px;
             padding: 2rem;
             width: 90%;
-            max-width: 500px;
+            max-width: 600px;
             max-height: 80vh;
             overflow-y: auto;
+        }
+
+        .modal-content.markdown-modal {
+            max-width: 1000px;
         }
 
         .form-group {
@@ -335,6 +349,122 @@
             stroke: #ff4757;
             stroke-width: 10;
         }
+
+        .help-section {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+
+        .help-section h3 {
+            border-bottom: 2px solid #6c5ce7;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+            color: #2d3436;
+        }
+
+        .markdown-content {
+            line-height: 1.6;
+            color: #333;
+        }
+        
+        .markdown-content h1, .markdown-content h2, .markdown-content h3 {
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: #2c3e50;
+        }
+        
+        .markdown-content h1 {
+            font-size: 2rem;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 0.5rem;
+        }
+        
+        .markdown-content h2 {
+            font-size: 1.5rem;
+            border-bottom: 1px solid #bdc3c7;
+            padding-bottom: 0.3rem;
+        }
+        
+        .markdown-content h3 {
+            font-size: 1.2rem;
+        }
+        
+        .markdown-content ul, .markdown-content ol {
+            margin: 1rem 0;
+            padding-left: 2rem;
+        }
+        
+        .markdown-content li {
+            margin-bottom: 0.5rem;
+        }
+        
+        .markdown-content p {
+            margin: 1rem 0;
+        }
+        
+        .markdown-content code {
+            background-color: #f8f9fa;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        
+        .markdown-content pre {
+            background-color: #f8f9fa;
+            padding: 1rem;
+            border-radius: 4px;
+            overflow-x: auto;
+            border-left: 4px solid #3498db;
+        }
+        
+        .markdown-content blockquote {
+            border-left: 4px solid #3498db;
+            margin: 1rem 0;
+            padding-left: 1rem;
+            color: #555;
+            font-style: italic;
+        }
+        
+        .markdown-content table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1rem 0;
+        }
+        
+        .markdown-content th, .markdown-content td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        
+        .markdown-content th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        
+        .markdown-content strong {
+            color: #2c3e50;
+        }
+        
+        .markdown-content em {
+            color: #7f8c8d;
+        }
+        
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+        
+        .close-btn:hover {
+            color: #333;
+        }
     </style>
 </head>
 <body>
@@ -352,6 +482,7 @@
             <button class="btn buttonStyle3" onclick="exportCache()">Export Graph File</button>
             <input type="file" id="cacheFileInput" accept=".graph.json" style="display: none;" onchange="importCache(event)">
             <button class="btn buttonStyle4" onclick="document.getElementById('cacheFileInput').click()">Import Graph File</button>
+            <button class="btn buttonStyle7" onclick="openHelpModal()" title="Help">?</button>
         </div>
     </div>
 
@@ -477,6 +608,19 @@
         </div>
     </div>
 
+    <!-- Help Modal -->
+    <div id="helpModal" class="modal">
+        <div class="modal-content markdown-modal">
+            <span class="close-btn" onclick="closeHelpModal()">&times;</span>
+            <div id="markdownContent" class="markdown-content">
+                <!-- Markdown content will be rendered here -->
+            </div>
+            <div style="margin-top: 2rem; text-align: center;">
+                <button class="btn primary" onclick="closeHelpModal()">Got It!</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         let blocks = {};
         let connections = [];
@@ -495,6 +639,68 @@
         let currentEditingFieldIndex = -1;
         const minZoom = 0.2;
         const maxZoom = 3;
+        const markdownText = `# 🧱 Block Constructor Help
+
+Your guide to building and managing visual workflows with ease!
+
+## ⌨️ Shortcuts & Gestures
+
+| Action                 | Description                                           |
+| ---------------------- | ----------------------------------------------------- |
+| 🖱️ **Move Canvas**    | Click + drag the empty canvas area                    |
+| 🔍 **Zoom**            | Hold \`Ctrl\` / \`Cmd\` + scroll mouse wheel              |
+| 🧲 **Move Block**      | Click + drag a block                                  |
+| ✏️ **Edit Block**      | Double-click a block                                  |
+| ❌ **Delete Block**     | Click the **×** on the block                          |
+| 🧬 **Duplicate Block** | Click the **⧉** icon on the block                     |
+| 🧹 **Clear Canvas**    | Click the **"Clear All"** button to remove all blocks |
+
+---
+
+## 🧰 Using the Block Constructor
+
+### ➕ Create a New Block
+
+Click the **"Create Block"** button to add a new block to your canvas.
+
+---
+
+### 🔗 Connect Blocks
+
+Create directional connections between blocks:
+
+1. Click **"Connect Blocks"**
+2. Select the **source** block
+3. Select the **target** block
+4. Click **"Connect Blocks"** again to exit connection mode
+
+---
+
+### ✏️ Edit Connection Labels
+
+Click a **connection line** to add or modify the label/text above the arrow.
+
+---
+
+### ✂️ Remove a Connection
+
+1. Click **"Remove Connections"**
+2. Click the connection line you want to remove
+3. Click **"Remove Connections"** again to exit removal mode
+
+---
+
+## 💾 Export & Import
+
+| Option                        | Details                                                                       |
+| ----------------------------- | ----------------------------------------------------------------------------- |
+| 🧠 **Export Graph File**      | Saves the **entire project**, including blocks, connections & metadata as \`graph.json\`|
+| 🔄 **Import Graph File**      | Load a previously saved \`graph.json\` file to continue working on your project |
+| 🧾 **Export as \`json\`**       | Saves **blocks only** (no connections/metadata) — useful for developers       |
+| 🔄 **Import \`json\`**          | Load **blocks only** (no connections/metadata) — useful for developers        |
+
+---
+`;
 
         const canvasWrapper = document.getElementById("canvasWrapper");
 
@@ -552,6 +758,17 @@
             canvasWrapper.scrollLeft = scrollStart.x - dx;
             canvasWrapper.scrollTop = scrollStart.y - dy;
         });
+
+        function openHelpModal() {
+            // Convert markdown to HTML
+            const htmlContent = marked.parse(markdownText);
+            document.getElementById('markdownContent').innerHTML = htmlContent;
+            document.getElementById('helpModal').style.display = 'block';
+        }
+
+        function closeHelpModal() {
+            document.getElementById('helpModal').style.display = 'none';
+        }
 
         // Add this function to handle loading cache data
         function loadCacheData(cacheData) {
@@ -1938,6 +2155,9 @@
                 }
                 if (e.target.id === 'editFieldModal') {
                     currentEditingFieldIndex = -1;
+                }
+                if (e.target.id === 'helpModal') {
+                    closeHelpModal();
                 }
             }
         });
