@@ -683,19 +683,21 @@
         const maxZoom = 3;
         const markdownText = `# 🧱 Block Constructor Help
 
-Your guide to building and managing visual workflows with ease!
+Your interactive guide to building, connecting, editing, and exporting visual workflows effortlessly.
+
+---
 
 ## ⌨️ Shortcuts & Gestures
 
 | Action                 | Description                                           |
 | ---------------------- | ----------------------------------------------------- |
-| 🖱️ **Move Canvas**    | Click + drag the empty canvas area                    |
+| 🖱️ **Move Canvas**    | Click + drag empty canvas area                        |
 | 🔍 **Zoom**            | Hold \`Ctrl\` / \`Cmd\` + scroll mouse wheel              |
 | 🧲 **Move Block**      | Click + drag a block                                  |
 | ✏️ **Edit Block**      | Double-click a block                                  |
-| ❌ **Delete Block**     | Click the **×** on the block                          |
+| ❌ **Delete Block**     | Click the **×** button on the block                   |
 | 🧬 **Duplicate Block** | Click the **⧉** icon on the block                     |
-| 🧹 **Clear Canvas**    | Click the **"Clear All"** button to remove all blocks |
+| 🧹 **Clear Canvas**    | Click the **"Clear All"** button                      |
 
 ---
 
@@ -703,45 +705,89 @@ Your guide to building and managing visual workflows with ease!
 
 ### ➕ Create a New Block
 
-Click the **"Create Block"** button to add a new block to your canvas.
+Click **"Create Block"** to define:
+- Unique ID
+- Fields with key, type (string, number, boolean, array, object), and value
+- Custom width and height
+
+Use the **"Add Field"** button to add multiple fields. Edit or remove them via the field list below.
 
 ---
 
 ### 🔗 Connect Blocks
 
-Create directional connections between blocks:
+Click **"Connect Blocks"** to create directional arrows:
 
-1. Click **"Connect Blocks"**
-2. Select the **source** block
-3. Select the **target** block
-4. Click **"Connect Blocks"** again to exit connection mode
+1. Click a **source block**
+2. Click a **target block**
+3. Click **"Connect Blocks"** again to exit connection mode
 
 ---
 
-### ✏️ Edit Connection Labels
+### 🏷️ Edit Connection Labels
 
-Click a **connection line** to add or modify the label/text above the arrow.
+Click on a **connection arrow** to:
+- Add or change label text
+- Adjust font size of the label
 
 ---
 
 ### ✂️ Remove a Connection
 
 1. Click **"Remove Connections"**
-2. Click the connection line you want to remove
-3. Click **"Remove Connections"** again to exit removal mode
+2. Click the connection you want to delete
+3. Click **"Remove Connections"** again to exit
 
 ---
 
-## 💾 Export & Import
+## 🖼️ Canvas & Block Customization
+
+- Blocks are draggable
+- Canvas resizes dynamically
+- Use **zoom** and **pan** to explore large diagrams
+- Blocks have persistent size (width & height) and store field values with proper types
+
+---
+
+## 💾 Export & Import Options
 
 | Option                        | Details                                                                       |
 | ----------------------------- | ----------------------------------------------------------------------------- |
-| 🧠 **Export Graph File**      | Saves the **entire project**, including blocks, connections & metadata as \`graph.json\`|
-| 🔄 **Import Graph File**      | Load a previously saved \`graph.json\` file to continue working on your project |
-| 🧾 **Export as \`json\`**       | Saves **blocks only** (no connections/metadata) — useful for developers       |
-| 🔄 **Import \`json\`**          | Load **blocks only** (no connections/metadata) — useful for developers        |
+| 🧠 **Export Graph File**      | Saves blocks, connections, metadata to a \`.graph.json\` file                   |
+| 🔄 **Import Graph File**      | Load a full project from a \`.graph.json\` file                                 |
+| 🧾 **Export as \`json\`**        | Exports blocks only (IDs + fields) — ideal for developers                     |
+| 🔄 **Import \`json\`**           | Imports only block data (no layout or connections)                            |
 
 ---
+
+## 🌐 Save & Load from Server
+
+- **Save Graph File**: Store your project on the server using a custom file name  
+  ➤ If a file exists, you'll be prompted before overwriting.
+
+- **Load Graph File**: View a list of saved \`.graph.json\` files on the server and load them into your canvas.
+
+---
+
+## 🖼️ Export as Image
+
+| Format       | Description                                           |
+| ------------ | ----------------------------------------------------- |
+| 🖼️ **SVG**   | Vector-quality export of the canvas, preserves text   |
+| 🖼️ **JPEG**  | Raster export of current canvas view                  |
+
+---
+
+## 🧠 Tips
+
+- All work is automatically cached in localStorage
+- Use **Import Graph File** to restore saved work
+- Use **Duplicate Block** to quickly reuse structures
+- Field types like arrays or objects must be valid JSON
+
+---
+
+Enjoy building your workflows visually with **Block Constructor**!
 `;
 
         const canvasWrapper = document.getElementById("canvasWrapper");
