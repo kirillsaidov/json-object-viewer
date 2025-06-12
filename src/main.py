@@ -77,7 +77,7 @@ async def list_graphs():
                 'name': file,
                 'size': stat.st_size,
                 'mod_time': stat.st_mtime,
-                'mod_time_readable': datetime.now().strftime('%d-%m-%Y, %H:%M:%S')
+                'mod_time_readable': datetime.fromtimestamp(stat.st_mtime).strftime('%d-%m-%Y, %H:%M:%S'),
             })
     
     # sort by modification time (newest first)
