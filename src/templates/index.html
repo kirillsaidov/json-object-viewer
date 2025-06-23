@@ -679,6 +679,7 @@
         let canvasZoom = 1;
         let currentArrowIndex = -1;
         let currentEditingFieldIndex = -1;
+        let lastSaveGraphFilename = ""
         const minZoom = 0.2;
         const maxZoom = 3;
         const markdownText = `# 🧱 Справка по использованию Конструктуру Скрипта Разговоров
@@ -2249,7 +2250,7 @@
 
         function openSaveGraphModal() {
             document.getElementById('saveGraphModal').style.display = 'block';
-            document.getElementById('graphFileName').value = '';
+            document.getElementById('graphFileName').value = lastSaveGraphFilename;
             document.getElementById('saveGraphMessage').style.display = 'none';
         }
 
@@ -2278,6 +2279,9 @@
                 showSaveGraphMessage('Please enter a file name');
                 return;
             }
+
+            // cache it
+            lastSaveGraphFilename = fileNameInput
 
             const fileName = fileNameInput.endsWith('.graph.json') ? fileNameInput : fileNameInput + '.graph.json';
             checkGraphFileExists(fileName).then(function (exists) {
