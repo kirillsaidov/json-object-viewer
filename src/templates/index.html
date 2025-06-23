@@ -679,7 +679,7 @@
         let canvasZoom = 1;
         let currentArrowIndex = -1;
         let currentEditingFieldIndex = -1;
-        let lastSaveGraphFilename = ""
+        let lastSaveGraphFilename = "";
         const minZoom = 0.2;
         const maxZoom = 3;
         const markdownText = `# 🧱 Справка по использованию Конструктуру Скрипта Разговоров
@@ -2281,7 +2281,7 @@
             }
 
             // cache it
-            lastSaveGraphFilename = fileNameInput
+            lastSaveGraphFilename = fileNameInput;
 
             const fileName = fileNameInput.endsWith('.graph.json') ? fileNameInput : fileNameInput + '.graph.json';
             checkGraphFileExists(fileName).then(function (exists) {
