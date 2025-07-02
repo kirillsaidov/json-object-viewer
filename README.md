@@ -1,51 +1,51 @@
 # json-object-viewer
 View JSON objects on your Web browser: 
 
-<img src="imgs/img.png" width="720">
+<img src="assets/ui.png" width="720">
 
-Export as SVG:
+Export as JPEG/SVG:
 
-<img src="imgs/img2.svg" width="720">
+<img src="assets/export_image.jpg" width="720">
 
-Export/Import as json:
+Export/Import as JSON file:
 
 ```json
 {
-  "A": {
-    "id": "A",
-    "name": "Joshua",
-    "children_ids": [
-      "B",
-      "C",
-      "D"
-    ],
-    "parent_id": ""
-  },
-  "B": {
-    "id": "B",
-    "name": "Alex",
-    "children_ids": [],
-    "parent": "A"
-  },
-  "C": {
-    "id": "C",
-    "name": "Anna",
-    "children_ids": [],
-    "parent_id": "A"
-  },
-  "D": {
-    "id": "D",
-    "name": "Mari",
-    "children_ids": [],
-    "parent_id": "A"
-  }
+    "A": {
+        "id": "448531685452",
+        "name": "Joshua",
+        "children": [
+            "Mari",
+            "Anna",
+            "Alex"
+        ],
+        "parent": ""
+    },
+    "B": {
+        "id": "231856341582",
+        "name": "Mari",
+        "children": [],
+        "parent": "Joshua"
+    },
+    "C": {
+        "id": "34968461354586",
+        "name": "Anna",
+        "children": [],
+        "parent": "Joshua"
+    },
+    "D": {
+        "id": "897312018461",
+        "name": "Alex",
+        "children": [],
+        "parent": "Joshua"
+    }
 }
 ```
-You can also save/load a `graph.json` file to continue editing it later.
+You can also save/load a project `graph.json` file to continue editing it later. It keeps all connections and metadata intact.
 
 ## Install
 ```sh
-$ git clone --recurse-submodules git@github.com:kirillsaidov/json-object-viewer.git
+$ git clone git@github.com:kirillsaidov/json-object-viewer.git
 ```
 
 ### Run

@@ -1,0 +1,30 @@
+{
+    "A": {
+        "id": "448531685452",
+        "name": "Joshua",
+        "children": [
+            "Mari",
+            "Anna",
+            "Alex"
+        ],
+        "parent": ""
+    },
+    "B": {
+        "id": "231856341582",
+        "name": "Mari",
+        "children": [],
+        "parent": "Joshua"
+    },
+    "C": {
+        "id": "34968461354586",
+        "name": "Anna",
+        "children": [],
+        "parent": "Joshua"
+    },
+    "D": {
+        "id": "897312018461",
+        "name": "Alex",
+        "children": [],
+        "parent": "Joshua"
+    }
+}
