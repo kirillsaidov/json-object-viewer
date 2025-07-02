@@ -1,5 +1,5 @@
 # json-object-viewer
-View JSON objects on your Web browser: 
+View JSON objects on your Web browser:
 
 <img src="assets/ui.png" width="720">
 
@@ -41,7 +41,7 @@ Export/Import as JSON file:
     }
 }
 ```
-You can also save/load a project `graph.json` file to continue editing it later. It keeps all connections and metadata intact.
+You can also save/load a `graph.json` project file to continue editing it later. It keeps all connections and metadata intact.
 
 ## Install
 ```sh
